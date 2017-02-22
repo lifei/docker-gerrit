@@ -1,21 +1,20 @@
 # gerrit
 #
-FROM lifei/java
-
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y git-core
+FROM java:alpine
+MAINTAINER lifei
 
 ENV GERRIT_USER gerrit2
 ENV GERRIT_HOME /home/${GERRIT_USER}
-ENV GERRIT_WAR ${GERRIT_HOME}/gerrit.war
-ENV GERRIT_VERSION 2.11.2
-RUN useradd -m ${GERRIT_USER}
+ENV GERRIT_ROOT ${GERRIT_HOME}/gerrit
+ENV GERRIT_WAR /usr/local/bin/gerrit.war
+ENV GERRIT_VERSION 2.13.5
 
-RUN curl -fSL -o $GERRIT_WAR https://gerrit-releases.storage.googleapis.com/gerrit-${GERRIT_VERSION}.war
-RUN chown -R ${GERRIT_USER}:${GERRIT_USER} $GERRIT_HOME
-RUN setuser ${GERRIT_USER} java -jar $GERRIT_WAR init --batch -d ${GERRIT_HOME}/gerrit
+COPY init.sh /tmp/init.sh
+RUN sh /tmp/init.sh
 
-RUN rm -rf /etc/service/sshd /etc/my_init.d/00_regen_ssh_host_keys.sh
-COPY service_gerrit_run.sh /etc/service/gerrit/run
-RUN chmod a+x /etc/service/gerrit/run
+
+USER ${GERRIT_USER}
+
+CMD java -jar ${GERRIT_WAR} daemon -d ${GERRIT_ROOT} --run-id=100
 
 EXPOSE 8080 29418
